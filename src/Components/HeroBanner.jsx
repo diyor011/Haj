@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import { EffectFade, Autoplay, Pagination, Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/effect-fade';
 import 'swiper/css/pagination';
@@ -23,13 +24,17 @@ const HeroBanner = () => {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden z-0">
+    <div className="relative w-full h-screen overflow-hidden">
+      
+      
       <div
-        className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+        className="absolute inset-0 bg-cover bg-center transition-all duration-1000 z-0"
         style={{ backgroundImage: `url(${activeBackground})` }}
       ></div>
 
+      {/* Swiper */}
       <Swiper
+        modules={[EffectFade, Autoplay, Pagination, Navigation]}
         effect="fade"
         speed={1500}
         autoplay={{
@@ -42,16 +47,18 @@ const HeroBanner = () => {
         navigation={true}
         loop={true}
         onSlideChange={handleSlideChange}
-        className="w-full h-full opacity-0 pointer-events-none"
+        className="absolute w-full h-full opacity-0 pointer-events-none z-0"
       >
         {slides.map((slide, index) => (
           <SwiperSlide key={index}></SwiperSlide>
         ))}
       </Swiper>
 
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/70 "></div>
+     
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/70 z-10"></div>
 
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-white px-4">
+      
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-white px-4 z-20">
         <div className="flex gap-6 max-[588px]:flex-col max-[588px]:items-center">
           {["Madina AL Munavvara", "Makka", "Umra"].map((city, idx) => (
             <React.Fragment key={idx}>
@@ -71,6 +78,7 @@ const HeroBanner = () => {
           ))}
         </div>
       </div>
+
     </div>
   );
 };
