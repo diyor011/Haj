@@ -8,6 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const Badge = () => {
   const fileInputRef = useRef();
+  const qrRef = useRef(); // QR code uchun ref
   const [image, setImage] = useState(null);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,6 +83,16 @@ const Badge = () => {
     }
   };
 
+  const handleDownloadQr = () => {
+    const canvas = qrRef.current?.querySelector('canvas');
+    if (!canvas) return toast.error("QR code topilmadi");
+    const imgUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = imgUrl;
+    a.download = 'qr_code.png';
+    a.click();
+  };
+
   return (
     <div>
       <div className="bg-gradient-to-r from-[#EEAECA] to-[#94BBE9] px-4 py-4 rounded-2xl mt-8 max-w-3xl mx-auto">
@@ -150,21 +161,19 @@ const Badge = () => {
           </div>
         </div>
 
-        <div className="flex justify-center items-center mt-4">
+        <div className="flex justify-center items-center mt-4 flex-col">
           <input name="id_badge" value={formData.id_badge} onChange={handleChange} type="text" placeholder="18030-03-0980"
-            className="text-black border border-gray-300 px-2 py-1 rounded outline-none" />
-          {qrCodeUrl && (
-            <div className="flex flex-col items-center mt-6 gap-3">
-              <QRCodeCanvas value={qrCodeUrl} size={128} />
+            className="text-black border border-gray-300 px-2 py-1 rounded outline-none mb-4" />
 
+          {qrCodeUrl && (
+            <div className="flex flex-col items-center mt-2 gap-3" ref={qrRef}>
+              <QRCodeCanvas value={qrCodeUrl} size={128} />
             </div>
           )}
         </div>
-
-
       </div>
 
-      <div className="mt-4 flex justify-center">
+      <div className="mt-4 flex justify-center gap-4">
         <button
           onClick={handleSubmit}
           disabled={loading}
@@ -172,13 +181,25 @@ const Badge = () => {
         >
           {loading ? 'Yuklanmoqda...' : 'Maʼlumotni yuborish'}
         </button>
-        <a
-          href={qrCodeUrl}
-          download="id_card.pdf"
-          className="btn bg-gradient-to-r from-[#EEAECA] to-[#94BBE9] px-4 py-2 rounded-md font-semibold disabled:opacity-50"
-        >
-          PDF ni yuklab olish
-        </a>
+
+        {qrCodeUrl && (
+          <>
+            <a
+              href={qrCodeUrl}
+              download="id_card.pdf"
+              className="btn bg-gradient-to-r from-[#EEAECA] to-[#94BBE9] px-4 py-2 rounded-md font-semibold"
+            >
+              PDF faylni yuklab olish
+            </a>
+
+            <button
+              onClick={handleDownloadQr}
+              className="btn bg-gradient-to-r from-[#EEAECA] to-[#94BBE9] px-4 py-2 rounded-md font-semibold"
+            >
+              QR Code ni yuklab olish
+            </button>
+          </>
+        )}
       </div>
 
       <ToastContainer position="top-center" />
