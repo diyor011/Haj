@@ -8,7 +8,6 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const Badge = () => {
   const fileInputRef = useRef();
-  const qrRef = useRef(); // QR code uchun ref
   const [image, setImage] = useState(null);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,47 +50,60 @@ const Badge = () => {
 
   const handleSubmit = async () => {
     if (!image) return toast.error('Rasm tanlanmagan');
-
+  
     setLoading(true);
     const form = new FormData();
-
+  
     Object.entries(formData).forEach(([key, val]) => {
       form.append(key, val);
     });
     form.append('user_image', image);
-
+  
     try {
+      // 1. Formani backendga yuborish
       const res = await fetch('https://hajgov.com/api/register/', {
         method: 'POST',
         body: form,
       });
-
+  
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(errText || 'Xatolik yuz berdi');
       }
-
+  
+      // 2. PDF file blob sifatida qaytadi
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      setQrCodeUrl(url);
-
-      toast.success("PDF tayyor, endi yuklab olishingiz mumkin!");
+      setQrCodeUrl(url); // QRCodeCanvas uchun
+  
+      // 3. PDF avtomatik yuklab olinadi
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = 'badge.pdf';
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+  
+      toast.success("PDF fayl tayyor va yuklab olindi!");
     } catch (err) {
       toast.error("Xatolik: " + err.message);
     } finally {
       setLoading(false);
     }
   };
+  
 
-  const handleDownloadQr = () => {
-    const canvas = qrRef.current?.querySelector('canvas');
-    if (!canvas) return toast.error("QR code topilmadi");
-    const imgUrl = canvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = imgUrl;
-    a.download = 'qr_code.png';
-    a.click();
+  const handleDownloadQR = () => {
+    const canvas = document.querySelector('canvas');
+    const pngUrl = canvas.toDataURL('image/png');
+    const downloadLink = document.createElement('a');
+    downloadLink.href = pngUrl;
+    downloadLink.download = 'qr-code.png';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
   };
+  
 
   return (
     <div>
@@ -161,19 +173,26 @@ const Badge = () => {
           </div>
         </div>
 
-        <div className="flex justify-center items-center mt-4 flex-col">
+        <div className="flex justify-center items-center mt-4 gap-4">
           <input name="id_badge" value={formData.id_badge} onChange={handleChange} type="text" placeholder="18030-03-0980"
-            className="text-black border border-gray-300 px-2 py-1 rounded outline-none mb-4" />
-
-          {qrCodeUrl && (
-            <div className="flex flex-col items-center mt-2 gap-3" ref={qrRef}>
-              <QRCodeCanvas value={qrCodeUrl} size={128} />
-            </div>
-          )}
+            className="text-black border border-gray-300 px-2 py-1 rounded outline-none" />
+      {qrCodeUrl && (
+  <div className="flex flex-col items-center mt-6 gap-3">
+    <QRCodeCanvas value={qrCodeUrl} size={128} />
+    <button
+      onClick={handleDownloadQR}
+      className="mt-2 bg-amber-600 text-white px-3 py-1 rounded hover:bg-amber-700"
+    >
+      QR Code-ni yuklab olish
+    </button>
+  </div>
+)}
         </div>
+
+
       </div>
 
-      <div className="mt-4 flex justify-center gap-4">
+      <div className="mt-4 flex justify-center">
         <button
           onClick={handleSubmit}
           disabled={loading}
@@ -182,24 +201,9 @@ const Badge = () => {
           {loading ? 'Yuklanmoqda...' : 'Maʼlumotni yuborish'}
         </button>
 
-        {qrCodeUrl && (
-          <>
-            <a
-              href={qrCodeUrl}
-              download="id_card.pdf"
-              className="btn bg-gradient-to-r from-[#EEAECA] to-[#94BBE9] px-4 py-2 rounded-md font-semibold"
-            >
-              PDF faylni yuklab olish
-            </a>
 
-            <button
-              onClick={handleDownloadQr}
-              className="btn bg-gradient-to-r from-[#EEAECA] to-[#94BBE9] px-4 py-2 rounded-md font-semibold"
-            >
-              QR Code ni yuklab olish
-            </button>
-          </>
-        )}
+      
+    
       </div>
 
       <ToastContainer position="top-center" />
