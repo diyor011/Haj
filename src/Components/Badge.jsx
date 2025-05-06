@@ -33,65 +33,39 @@ const Badge = () => {
     if (file) setImage(file);
   };
 
-  const resetForm = () => {
-    setFormData({
-      first_name: '',
-      last_name: '',
-      surname: '',
-      country: '',
-      birthday: '',
-      id_pass: '',
-      phone: '',
-      id_badge: '',
-    });
-    setImage(null);
-    setQrCodeUrl('');
-  };
-
   const handleSubmit = async () => {
     if (!image) return toast.error('Rasm tanlanmagan');
-  
+
     setLoading(true);
     const form = new FormData();
-  
     Object.entries(formData).forEach(([key, val]) => {
       form.append(key, val);
     });
     form.append('user_image', image);
-  
+
     try {
-      // 1. Formani backendga yuborish
-      const res = await fetch('https://hajgov.com/api/register/', {
+      const res = await fetch('https://hajgov.com/api/qr-register/', {
         method: 'POST',
         body: form,
       });
-  
+
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(errText || 'Xatolik yuz berdi');
       }
-  
-      // 2. PDF file blob sifatida qaytadi
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      setQrCodeUrl(url); // QRCodeCanvas uchun
-  
-      // 3. PDF avtomatik yuklab olinadi
-      const downloadLink = document.createElement('a');
-      downloadLink.href = url;
-      downloadLink.download = 'badge.pdf';
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-  
-      toast.success("PDF fayl tayyor va yuklab olindi!");
+
+      const data = await res.json();
+      const qrImgPath = data.id_card.qr_image;
+      const qrFullUrl = `https://hajgov.com${qrImgPath}`;
+      setQrCodeUrl(qrFullUrl);
+
+      toast.success("QR Code tayyor!");
     } catch (err) {
       toast.error("Xatolik: " + err.message);
     } finally {
       setLoading(false);
     }
   };
-  
 
   const handleDownloadQR = () => {
     const canvas = document.querySelector('canvas');
@@ -103,7 +77,6 @@ const Badge = () => {
     downloadLink.click();
     document.body.removeChild(downloadLink);
   };
-  
 
   return (
     <div>
@@ -117,9 +90,7 @@ const Badge = () => {
               {image ? (
                 <img src={URL.createObjectURL(image)} className="w-24 h-24 object-cover" alt="Uploaded" />
               ) : (
-                <p className="text-9xl text-white">
-                  <FaUserAlt />
-                </p>
+                <p className="text-9xl text-white"><FaUserAlt /></p>
               )}
               <input
                 ref={fileInputRef}
@@ -173,23 +144,30 @@ const Badge = () => {
           </div>
         </div>
 
-        <div className="flex justify-center items-center mt-4 gap-4">
-          <input name="id_badge" value={formData.id_badge} onChange={handleChange} type="text" placeholder="18030-03-0980"
-            className="text-black border border-gray-300 px-2 py-1 rounded outline-none" />
-      {qrCodeUrl && (
-  <div className="flex flex-col items-center mt-6 gap-3">
-    <QRCodeCanvas value={qrCodeUrl} size={128} />
-    <button
-      onClick={handleDownloadQR}
-      className="mt-2 bg-amber-600 text-white px-3 py-1 rounded hover:bg-amber-700"
-    >
-      QR Code-ni yuklab olish
-    </button>
-  </div>
-)}
+        <div className="flex justify-between items-start mt-4 gap-4">
+          <input
+            name="id_badge"
+            value={formData.id_badge}
+            onChange={handleChange}
+            type="text"
+            placeholder="18030-03-0980"
+            className="text-black border border-gray-300 px-2 py-1 rounded outline-none w-1/2"
+          />
+
+          {qrCodeUrl && (
+            <div className="flex flex-col items-center gap-2">
+              <div className="bg-white p-2 rounded shadow-md">
+                <QRCodeCanvas value={qrCodeUrl} size={100} />
+              </div>
+              <button
+                onClick={handleDownloadQR}
+                className="bg-amber-600 text-white px-3 py-1 rounded hover:bg-amber-700 text-sm"
+              >
+                QR-ni yuklab olish
+              </button>
+            </div>
+          )}
         </div>
-
-
       </div>
 
       <div className="mt-4 flex justify-center">
@@ -200,10 +178,6 @@ const Badge = () => {
         >
           {loading ? 'Yuklanmoqda...' : 'Maʼlumotni yuborish'}
         </button>
-
-
-      
-    
       </div>
 
       <ToastContainer position="top-center" />
